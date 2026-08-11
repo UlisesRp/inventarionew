@@ -1,0 +1,1039 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Inventario & Ventas</title>
+<style>
+  :root {
+    --primary: #6366f1;
+    --primary-dark: #4f46e5;
+    --success: #22c55e;
+    --danger: #ef4444;
+    --warning: #f59e0b;
+    --info: #3b82f6;
+    --bg: #f1f5f9;
+    --card: #ffffff;
+    --text: #1e293b;
+    --muted: #64748b;
+    --border: #e2e8f0;
+    --radius: 14px;
+    --shadow: 0 4px 6px -1px rgba(0,0,0,0.07), 0 2px 4px -2px rgba(0,0,0,0.05);
+    --shadow-lg: 0 10px 15px -3px rgba(0,0,0,0.08), 0 4px 6px -4px rgba(0,0,0,0.04);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.5;
+    min-height: 100vh;
+  }
+  .container { max-width: 1200px; margin: 0 auto; padding: 20px; }
+
+  .header {
+    text-align: center;
+    padding: 30px 20px;
+    background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+    color: white;
+    border-radius: var(--radius);
+    margin-bottom: 24px;
+    box-shadow: var(--shadow-lg);
+  }
+  .header h1 { font-size: 2rem; font-weight: 800; letter-spacing: -0.5px; }
+  .header p { opacity: 0.9; margin-top: 6px; font-size: 1.05rem; }
+
+  .stats {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 16px;
+    margin-bottom: 28px;
+  }
+  .stat-card {
+    background: var(--card);
+    border-radius: var(--radius);
+    padding: 22px 18px;
+    box-shadow: var(--shadow);
+    text-align: center;
+    transition: transform 0.2s, box-shadow 0.2s;
+    border: 1px solid var(--border);
+  }
+  .stat-card:hover { transform: translateY(-3px); box-shadow: var(--shadow-lg); }
+  .stat-card .icon { font-size: 1.8rem; margin-bottom: 6px; }
+  .stat-card .number { font-size: 1.7rem; font-weight: 800; }
+  .stat-card .label { font-size: 0.78rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.8px; margin-top: 4px; font-weight: 600; }
+  .stat-card.total .number { color: var(--primary); }
+  .stat-card.ganancia .number { color: var(--success); }
+  .stat-card.pendiente .number { color: var(--danger); }
+  .stat-card.productos .number { color: var(--warning); }
+
+  .tabs {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+    background: var(--card);
+    padding: 8px;
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    border: 1px solid var(--border);
+  }
+  .tab {
+    padding: 12px 22px;
+    border-radius: 10px;
+    border: none;
+    cursor: pointer;
+    background: transparent;
+    color: var(--muted);
+    font-weight: 700;
+    font-size: 0.92rem;
+    transition: all 0.25s;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .tab:hover { background: #f1f5f9; color: var(--text); }
+  .tab.active { background: var(--primary); color: white; box-shadow: 0 4px 12px rgba(99,102,241,0.35); }
+
+  .panel { display: none; animation: fadeIn 0.3s ease; }
+  .panel.active { display: block; }
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+
+  .panel-card {
+    background: var(--card);
+    border-radius: var(--radius);
+    padding: 24px;
+    box-shadow: var(--shadow);
+    border: 1px solid var(--border);
+  }
+  .panel-title { font-size: 1.15rem; font-weight: 700; color: var(--text); margin-bottom: 18px; display: flex; align-items: center; gap: 8px; }
+
+  .form-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 16px;
+    margin-bottom: 18px;
+  }
+  .form-group { display: flex; flex-direction: column; }
+  .form-group label { font-size: 0.78rem; color: var(--muted); margin-bottom: 6px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.4px; }
+  .form-group input, .form-group select {
+    padding: 12px 14px;
+    border: 2px solid var(--border);
+    border-radius: 10px;
+    font-size: 0.95rem;
+    outline: none;
+    background: #fafbfc;
+    transition: border-color 0.2s, box-shadow 0.2s;
+    color: var(--text);
+  }
+  .form-group input:focus, .form-group select:focus {
+    border-color: var(--primary);
+    box-shadow: 0 0 0 4px rgba(99,102,241,0.1);
+    background: white;
+  }
+  .form-group input::placeholder { color: #94a3b8; }
+
+  .btn {
+    padding: 12px 22px;
+    border-radius: 10px;
+    border: none;
+    cursor: pointer;
+    font-weight: 700;
+    font-size: 0.9rem;
+    transition: all 0.2s;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .btn:hover { transform: translateY(-1px); }
+  .btn:active { transform: translateY(0); }
+  .btn-primary { background: var(--primary); color: white; box-shadow: 0 4px 14px rgba(99,102,241,0.3); }
+  .btn-primary:hover { background: var(--primary-dark); }
+  .btn-success { background: var(--success); color: white; box-shadow: 0 4px 14px rgba(34,197,94,0.25); }
+  .btn-success:hover { background: #16a34a; }
+  .btn-danger { background: var(--danger); color: white; box-shadow: 0 4px 14px rgba(239,68,68,0.25); }
+  .btn-danger:hover { background: #dc2626; }
+  .btn-info { background: var(--info); color: white; }
+  .btn-info:hover { background: #2563eb; }
+  .btn-ghost { background: #f1f5f9; color: var(--muted); }
+  .btn-ghost:hover { background: #e2e8f0; color: var(--text); }
+  .btn-sm { padding: 8px 14px; font-size: 0.82rem; }
+
+  .search-box { margin-bottom: 16px; }
+  .search-box input {
+    width: 100%;
+    max-width: 340px;
+    padding: 12px 16px;
+    border: 2px solid var(--border);
+    border-radius: 10px;
+    font-size: 0.95rem;
+    outline: none;
+    background: #fafbfc;
+  }
+  .search-box input:focus { border-color: var(--primary); box-shadow: 0 0 0 4px rgba(99,102,241,0.1); }
+
+  .table-wrap { overflow-x: auto; border-radius: 12px; border: 1px solid var(--border); }
+  table { width: 100%; border-collapse: collapse; font-size: 0.88rem; }
+  thead { background: #f8fafc; }
+  th {
+    padding: 14px 12px;
+    text-align: left;
+    font-weight: 700;
+    color: #475569;
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    border-bottom: 2px solid var(--border);
+    white-space: nowrap;
+  }
+  td { padding: 12px; border-bottom: 1px solid #f1f5f9; vertical-align: middle; }
+  tr:hover td { background: #f8fafc; }
+  tr:last-child td { border-bottom: none; }
+
+  .badge {
+    padding: 5px 12px;
+    border-radius: 20px;
+    font-size: 0.75rem;
+    font-weight: 700;
+    display: inline-block;
+    white-space: nowrap;
+  }
+  .badge-pagado { background: #dcfce7; color: #166534; }
+  .badge-pendiente { background: #fee2e2; color: #991b1b; }
+  .badge-mixto { background: #fef3c7; color: #92400e; }
+  .badge-stock { background: #dbeafe; color: #1e40af; }
+  .badge-entrada { background: #dcfce7; color: #166534; }
+  .badge-salida { background: #fee2e2; color: #991b1b; }
+
+  .profit-positive { color: var(--success); font-weight: 700; }
+  .profit-negative { color: var(--danger); font-weight: 700; }
+
+  .actions { display: flex; gap: 6px; flex-wrap: nowrap; }
+
+  .empty { text-align: center; padding: 50px 20px; color: #94a3b8; }
+  .empty-icon { font-size: 3rem; margin-bottom: 12px; opacity: 0.5; }
+
+  .divider { border: none; border-top: 1px solid var(--border); margin: 24px 0; }
+
+  .modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(15,23,42,0.55);
+    backdrop-filter: blur(4px);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    padding: 20px;
+    animation: fadeIn 0.2s ease;
+  }
+  .modal-overlay.active { display: flex; }
+  .modal {
+    background: white;
+    border-radius: 18px;
+    padding: 28px;
+    width: 100%;
+    max-width: 480px;
+    max-height: 90vh;
+    overflow-y: auto;
+    box-shadow: var(--shadow-lg);
+    animation: slideUp 0.3s ease;
+  }
+  @keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+  .modal h3 { margin: 0 0 20px; color: var(--text); font-size: 1.2rem; display: flex; align-items: center; gap: 8px; }
+  .modal-footer { display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px; }
+
+  .toast-container {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    z-index: 2000;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+  .toast {
+    background: white;
+    border-radius: 12px;
+    padding: 14px 20px;
+    box-shadow: var(--shadow-lg);
+    border-left: 4px solid var(--success);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-weight: 600;
+    font-size: 0.9rem;
+    animation: slideInRight 0.3s ease;
+    min-width: 280px;
+  }
+  .toast.error { border-left-color: var(--danger); }
+  .toast.info { border-left-color: var(--info); }
+  @keyframes slideInRight { from { opacity: 0; transform: translateX(40px); } to { opacity: 1; transform: translateX(0); } }
+
+  @media (max-width: 768px) {
+    .header h1 { font-size: 1.4rem; }
+    .stats { grid-template-columns: repeat(2, 1fr); }
+    .stat-card { padding: 16px 12px; }
+    .stat-card .number { font-size: 1.3rem; }
+    .tabs { overflow-x: auto; flex-wrap: nowrap; }
+    .tab { padding: 10px 14px; font-size: 0.85rem; white-space: nowrap; }
+    .form-grid { grid-template-columns: 1fr; }
+    .actions { flex-wrap: wrap; }
+    th, td { padding: 10px 8px; font-size: 0.82rem; }
+  }
+
+  ::-webkit-scrollbar { width: 8px; height: 8px; }
+  ::-webkit-scrollbar-track { background: #f1f5f9; }
+  ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+  ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+</style>
+</head>
+<body>
+
+<div class="toast-container" id="toastContainer"></div>
+
+<div class="container">
+
+  <!-- HEADER -->
+  <div class="header">
+    <h1>📦 Inventario & Ventas</h1>
+    <p>Tu negocio, organizado y al día</p>
+  </div>
+
+  <!-- STATS -->
+  <div class="stats">
+    <div class="stat-card productos">
+      <div class="icon">📦</div>
+      <div class="number" id="statProductos">0</div>
+      <div class="label">Productos en Stock</div>
+    </div>
+    <div class="stat-card total">
+      <div class="icon">💰</div>
+      <div class="number" id="statInversion">$0</div>
+      <div class="label">Inversión Total</div>
+    </div>
+    <div class="stat-card ganancia">
+      <div class="icon">📈</div>
+      <div class="number" id="statGanancia">$0</div>
+      <div class="label">Ganancia Realizada</div>
+    </div>
+    <div class="stat-card pendiente">
+      <div class="icon">⏳</div>
+      <div class="number" id="statPendiente">$0</div>
+      <div class="label">Por Cobrar</div>
+    </div>
+  </div>
+
+  <!-- TABS -->
+  <div class="tabs">
+    <button class="tab active" onclick="showTab('inventario', this)"><span>📋</span> Inventario</button>
+    <button class="tab" onclick="showTab('entradas', this)"><span>➕</span> Entradas</button>
+    <button class="tab" onclick="showTab('salidas', this)"><span>➖</span> Salidas</button>
+    <button class="tab" onclick="showTab('clientes', this)"><span>👥</span> Clientes</button>
+    <button class="tab" onclick="showTab('config', this)"><span>⚙️</span> Config</button>
+  </div>
+
+  <!-- PANEL: INVENTARIO -->
+  <div id="panel-inventario" class="panel active">
+    <div class="panel-card">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;flex-wrap:wrap;gap:10px;">
+        <div class="search-box">
+          <input type="text" id="searchInv" placeholder="🔍 Buscar producto..." oninput="renderInventario()">
+        </div>
+        <div style="display:flex;gap:8px;">
+          <button class="btn btn-primary" onclick="openModal('producto')">➕ Nuevo Producto</button>
+          <button class="btn btn-ghost" onclick="exportarCSV()">📥 Exportar CSV</button>
+        </div>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Producto</th>
+              <th>Stock</th>
+              <th>Compra</th>
+              <th>Venta</th>
+              <th>Entradas</th>
+              <th>Salidas</th>
+              <th>Ganancia</th>
+              <th style="text-align:center;">Acciones</th>
+            </tr>
+          </thead>
+          <tbody id="tbodyInventario"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- PANEL: ENTRADAS -->
+  <div id="panel-entradas" class="panel">
+    <div class="panel-card">
+      <div class="panel-title">📥 Registrar Compra (Entrada)</div>
+      <div class="form-grid">
+        <div class="form-group">
+          <label>Producto</label>
+          <select id="entradaProducto"></select>
+        </div>
+        <div class="form-group">
+          <label>Cantidad</label>
+          <input type="number" id="entradaCantidad" min="1" value="1">
+        </div>
+        <div class="form-group">
+          <label>Precio de Compra (c/u)</label>
+          <input type="number" id="entradaPrecio" min="0" step="0.01" placeholder="Ej. 118">
+        </div>
+        <div class="form-group">
+          <label>Precio de Venta (c/u)</label>
+          <input type="number" id="entradaVenta" min="0" step="0.01" placeholder="Ej. 220">
+        </div>
+      </div>
+      <button class="btn btn-success" onclick="registrarEntrada()">✅ Registrar Entrada</button>
+
+      <hr class="divider">
+      <div class="panel-title">📜 Historial de Entradas</div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr><th>Fecha</th><th>Producto</th><th>Cantidad</th><th>P. Compra</th><th>P. Venta</th><th>Total Invertido</th></tr>
+          </thead>
+          <tbody id="tbodyEntradas"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- PANEL: SALIDAS -->
+  <div id="panel-salidas" class="panel">
+    <div class="panel-card">
+      <div class="panel-title">📤 Registrar Venta (Salida)</div>
+      <div class="form-grid">
+        <div class="form-group">
+          <label>Producto</label>
+          <select id="salidaProducto"></select>
+        </div>
+        <div class="form-group">
+          <label>Cantidad</label>
+          <input type="number" id="salidaCantidad" min="1" value="1">
+        </div>
+        <div class="form-group">
+          <label>Cliente</label>
+          <input type="text" id="salidaCliente" placeholder="Nombre del cliente">
+        </div>
+        <div class="form-group">
+          <label>Status de Pago</label>
+          <select id="salidaStatus">
+            <option value="pagado">✅ Pagado</option>
+            <option value="pdte.">⏳ Pendiente</option>
+            <option value="mixto">💳 Mixto</option>
+          </select>
+        </div>
+      </div>
+      <button class="btn btn-danger" onclick="registrarSalida()">✅ Registrar Salida</button>
+
+      <hr class="divider">
+      <div class="panel-title">📜 Historial de Ventas</div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr><th>Fecha</th><th>Producto</th><th>Cantidad</th><th>Cliente</th><th>P. Unit.</th><th>Total</th><th>Status</th><th style="text-align:center;">Acciones</th></tr>
+          </thead>
+          <tbody id="tbodySalidas"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- PANEL: CLIENTES -->
+  <div id="panel-clientes" class="panel">
+    <div class="panel-card">
+      <div class="panel-title">👥 Clientes y Deudas</div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Cliente</th>
+              <th># Compras</th>
+              <th>Total Comprado</th>
+              <th>Pagado</th>
+              <th>Debe</th>
+              <th>Status</th>
+              <th style="text-align:center;">Acciones</th>
+            </tr>
+          </thead>
+          <tbody id="tbodyClientes"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- PANEL: CONFIG -->
+  <div id="panel-config" class="panel">
+    <div class="panel-card">
+      <div class="panel-title">⚙️ Configuracion & Respaldo</div>
+      <p style="color:var(--muted);margin-bottom:20px;">Respalda o restaura tus datos. Todo se guarda automaticamente en tu navegador.</p>
+      <div style="display:flex;gap:12px;flex-wrap:wrap;">
+        <button class="btn btn-info" onclick="exportarJSON()">💾 Descargar Respaldo (JSON)</button>
+        <label class="btn btn-success" style="cursor:pointer;">
+          📂 Cargar Respaldo
+          <input type="file" id="fileInput" accept=".json" style="display:none;" onchange="importarJSON(this)">
+        </label>
+        <button class="btn btn-danger" onclick="resetearDatos()">🗑️ Borrar Todo</button>
+      </div>
+      <hr class="divider">
+      <div style="background:#f8fafc;border-radius:10px;padding:16px;">
+        <strong style="color:var(--text);">💡 Tip:</strong>
+        <span style="color:var(--muted);"> Los datos se guardan en el navegador. Para compartir entre dispositivos, descarga el respaldo JSON y cargalo en otro celular o computadora.</span>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- MODAL: NUEVO PRODUCTO -->
+<div class="modal-overlay" id="modalProducto">
+  <div class="modal">
+    <h3>➕ Nuevo Producto</h3>
+    <div class="form-grid" style="grid-template-columns:1fr;">
+      <div class="form-group">
+        <label>Nombre del Producto</label>
+        <input type="text" id="newNombre" placeholder="Ej. Jogger Adi animalprint">
+      </div>
+      <div class="form-group">
+        <label>Unidades Iniciales</label>
+        <input type="number" id="newUnidades" min="0" value="0">
+      </div>
+      <div class="form-group">
+        <label>Precio de Compra (c/u)</label>
+        <input type="number" id="newCompra" min="0" step="0.01" placeholder="Ej. 118">
+      </div>
+      <div class="form-group">
+        <label>Precio de Venta (c/u)</label>
+        <input type="number" id="newVenta" min="0" step="0.01" placeholder="Ej. 220">
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('producto')">Cancelar</button>
+      <button class="btn btn-primary" onclick="guardarProducto()">Guardar Producto</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: EDITAR VENTA -->
+<div class="modal-overlay" id="modalEditarVenta">
+  <div class="modal">
+    <h3>✏️ Editar Venta</h3>
+    <div class="form-grid" style="grid-template-columns:1fr;">
+      <div class="form-group">
+        <label>Producto</label>
+        <input type="text" id="editVentaProducto" readonly style="background:#f1f5f9;">
+      </div>
+      <div class="form-group">
+        <label>Cliente</label>
+        <input type="text" id="editVentaCliente">
+      </div>
+      <div class="form-group">
+        <label>Status de Pago</label>
+        <select id="editVentaStatus">
+          <option value="pagado">✅ Pagado</option>
+          <option value="pdte.">⏳ Pendiente</option>
+          <option value="mixto">💳 Mixto</option>
+        </select>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('editarVenta')">Cancelar</button>
+      <button class="btn btn-primary" onclick="guardarEdicionVenta()">Guardar Cambios</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ============================================================
+// DATOS INICIALES
+// ============================================================
+const PRODUCTOS_INICIALES = [
+  { id:1, nombre:"Jogger Adi animalprint", stock:3, compra:118, venta:220 },
+  { id:2, nombre:"Playera disney princesa", stock:3, compra:78, venta:150 },
+  { id:3, nombre:"leggin negro", stock:0, compra:75, venta:150 },
+  { id:4, nombre:"Bolsa kitty", stock:2, compra:168, venta:280 },
+  { id:5, nombre:"Pijama kitty animal print", stock:3, compra:110, venta:200 },
+  { id:6, nombre:"Sueter corazon", stock:1, compra:95, venta:150 },
+  { id:7, nombre:"Pantufla kitty", stock:1, compra:118, venta:200 },
+  { id:8, nombre:"Chamarra seoul adidas", stock:3, compra:199, venta:380 },
+  { id:9, nombre:"Conjunto adidas dama", stock:3, compra:115, venta:250 },
+  { id:10, nombre:"Conjunto adidas puntos dama", stock:3, compra:210, venta:399 },
+  { id:11, nombre:"Sueter fresas", stock:4, compra:145, venta:259 },
+  { id:12, nombre:"Short deportivo dama", stock:2, compra:25, venta:60 }
+];
+
+const VENTAS_INICIALES = [
+  { id:101, productoId:1, cantidad:1, cliente:"Maciel", precioUnitario:220, status:"pdte.", fecha:"2026-08-01 10:00" },
+  { id:102, productoId:1, cantidad:1, cliente:"mimi", precioUnitario:220, status:"pdte.", fecha:"2026-08-02 14:30" },
+  { id:103, productoId:2, cantidad:1, cliente:"vero", precioUnitario:150, status:"pagado", fecha:"2026-08-03 11:00" },
+  { id:104, productoId:2, cantidad:1, cliente:"vero", precioUnitario:150, status:"pdte.", fecha:"2026-08-04 16:00" },
+  { id:105, productoId:2, cantidad:1, cliente:"Axel", precioUnitario:150, status:"pdte.", fecha:"2026-08-05 09:00" },
+  { id:106, productoId:2, cantidad:1, cliente:"Axel", precioUnitario:150, status:"pdte.", fecha:"2026-08-06 13:00" },
+  { id:107, productoId:3, cantidad:1, cliente:"mimi", precioUnitario:150, status:"pagado", fecha:"2026-08-01 10:00" },
+  { id:108, productoId:3, cantidad:1, cliente:"vero", precioUnitario:150, status:"pagado", fecha:"2026-08-02 14:30" },
+  { id:109, productoId:3, cantidad:1, cliente:"vero", precioUnitario:150, status:"pagado", fecha:"2026-08-03 11:00" },
+  { id:110, productoId:5, cantidad:1, cliente:"vero", precioUnitario:200, status:"pagado", fecha:"2026-08-04 16:00" },
+  { id:111, productoId:7, cantidad:1, cliente:"vero", precioUnitario:200, status:"pagado", fecha:"2026-08-05 09:00" },
+  { id:112, productoId:7, cantidad:1, cliente:"daniel", precioUnitario:200, status:"pdte.", fecha:"2026-08-06 13:00" },
+  { id:113, productoId:9, cantidad:1, cliente:"quique", precioUnitario:250, status:"pdte.", fecha:"2026-08-07 15:00" }
+];
+
+const ENTRADAS_INICIALES = [
+  { id:201, productoId:1, cantidad:5, precioCompra:118, precioVenta:220, fecha:"2026-07-15 10:00", total:590 },
+  { id:202, productoId:2, cantidad:7, precioCompra:78, precioVenta:150, fecha:"2026-07-15 10:00", total:546 },
+  { id:203, productoId:3, cantidad:3, precioCompra:75, precioVenta:150, fecha:"2026-07-15 10:00", total:225 },
+  { id:204, productoId:4, cantidad:2, precioCompra:168, precioVenta:280, fecha:"2026-07-15 10:00", total:336 },
+  { id:205, productoId:5, cantidad:4, precioCompra:110, precioVenta:200, fecha:"2026-07-15 10:00", total:440 },
+  { id:206, productoId:6, cantidad:1, precioCompra:95, precioVenta:150, fecha:"2026-07-15 10:00", total:95 },
+  { id:207, productoId:7, cantidad:3, precioCompra:118, precioVenta:200, fecha:"2026-07-15 10:00", total:354 },
+  { id:208, productoId:8, cantidad:3, precioCompra:199, precioVenta:380, fecha:"2026-07-15 10:00", total:597 },
+  { id:209, productoId:9, cantidad:4, precioCompra:115, precioVenta:250, fecha:"2026-07-15 10:00", total:460 },
+  { id:210, productoId:10, cantidad:3, precioCompra:210, precioVenta:399, fecha:"2026-07-15 10:00", total:630 },
+  { id:211, productoId:11, cantidad:4, precioCompra:145, precioVenta:259, fecha:"2026-07-15 10:00", total:580 },
+  { id:212, productoId:12, cantidad:2, precioCompra:25, precioVenta:60, fecha:"2026-07-15 10:00", total:50 }
+];
+
+// ============================================================
+// LOCALSTORAGE
+// ============================================================
+const STORAGE_KEY = 'inventario_negocio_v2';
+
+function loadData() {
+  const saved = localStorage.getItem(STORAGE_KEY);
+  if (saved) {
+    try { return JSON.parse(saved); } catch(e) {}
+  }
+  return {
+    productos: JSON.parse(JSON.stringify(PRODUCTOS_INICIALES)),
+    entradas: JSON.parse(JSON.stringify(ENTRADAS_INICIALES)),
+    ventas: JSON.parse(JSON.stringify(VENTAS_INICIALES))
+  };
+}
+
+function saveData() {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify({ productos, entradas, ventas }));
+}
+
+let { productos, entradas, ventas } = loadData();
+let editandoVentaId = null;
+
+// ============================================================
+// TOAST
+// ============================================================
+function toast(msg, type='success') {
+  const container = document.getElementById('toastContainer');
+  const el = document.createElement('div');
+  el.className = 'toast ' + type;
+  const icon = type==='error'?'❌':type==='info'?'ℹ️':'✅';
+  el.innerHTML = '<span style="font-size:1.2rem;">' + icon + '</span><span>' + msg + '</span>';
+  container.appendChild(el);
+  setTimeout(() => { el.style.opacity='0'; el.style.transform='translateX(40px)'; setTimeout(()=>el.remove(),300); }, 3000);
+}
+
+// ============================================================
+// TABS
+// ============================================================
+function showTab(tab, btn) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById('panel-'+tab).classList.add('active');
+  if(tab==='clientes') renderClientes();
+  if(tab==='inventario') renderInventario();
+  if(tab==='salidas') renderSalidas();
+  if(tab==='entradas') renderEntradas();
+}
+
+// ============================================================
+// STATS
+// ============================================================
+function updateStats() {
+  const totalStock = productos.reduce((a,p) => a + p.stock, 0);
+  const inversion = productos.reduce((a,p) => a + (p.stock * p.compra), 0);
+
+  let ganancia = 0;
+  let pendiente = 0;
+  ventas.forEach(v => {
+    const prod = productos.find(p => p.id === v.productoId);
+    if(prod) {
+      ganancia += v.cantidad * (v.precioUnitario - prod.compra);
+      const st = v.status.toLowerCase();
+      const totalVenta = v.cantidad * v.precioUnitario;
+      if(st.includes('pdte') || st.includes('pendiente')) pendiente += totalVenta;
+      else if(st.includes('mixto')) pendiente += totalVenta * 0.5;
+    }
+  });
+
+  document.getElementById('statProductos').textContent = totalStock;
+  document.getElementById('statInversion').textContent = '$' + inversion.toLocaleString('es-MX');
+  document.getElementById('statGanancia').textContent = '$' + ganancia.toLocaleString('es-MX');
+  document.getElementById('statPendiente').textContent = '$' + Math.round(pendiente).toLocaleString('es-MX');
+}
+
+// ============================================================
+// INVENTARIO
+// ============================================================
+function renderInventario() {
+  const buscar = document.getElementById('searchInv').value.toLowerCase();
+  const tbody = document.getElementById('tbodyInventario');
+  tbody.innerHTML = '';
+
+  const filtrados = productos.filter(p => p.nombre.toLowerCase().includes(buscar));
+  if(filtrados.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="8" class="empty"><div class="empty-icon">📭</div>No se encontraron productos</td></tr>';
+    return;
+  }
+
+  filtrados.forEach(p => {
+    const totalEntradas = entradas.filter(e => e.productoId === p.id).reduce((a,e) => a + e.cantidad, 0);
+    const totalSalidas = ventas.filter(v => v.productoId === p.id).reduce((a,v) => a + v.cantidad, 0);
+    const ganancia = ventas.filter(v => v.productoId === p.id).reduce((a,v) => a + v.cantidad * (v.precioUnitario - p.compra), 0);
+
+    const tr = document.createElement('tr');
+    tr.innerHTML = '<td><strong>' + p.nombre + '</strong></td>' +
+      '<td><span class="badge badge-stock">' + p.stock + '</span></td>' +
+      '<td>$' + p.compra + '</td>' +
+      '<td>$' + p.venta + '</td>' +
+      '<td><span class="badge badge-entrada">+' + totalEntradas + '</span></td>' +
+      '<td><span class="badge badge-salida">-' + totalSalidas + '</span></td>' +
+      '<td class="profit-positive">$' + ganancia + '</td>' +
+      '<td class="actions" style="text-align:center;">' +
+      '<button class="btn btn-sm btn-primary" onclick="editarProductoPrecios(' + p.id + ')" title="Editar precios">✏️</button>' +
+      '<button class="btn btn-sm btn-danger" onclick="eliminarProducto(' + p.id + ')" title="Eliminar">🗑️</button>' +
+      '</td>';
+    tbody.appendChild(tr);
+  });
+}
+
+// ============================================================
+// SELECTS
+// ============================================================
+function updateSelects() {
+  const opts = productos.map(p => '<option value="' + p.id + '">' + p.nombre + ' (stock: ' + p.stock + ')</option>').join('');
+  document.getElementById('entradaProducto').innerHTML = opts;
+  document.getElementById('salidaProducto').innerHTML = opts;
+}
+
+// ============================================================
+// ENTRADAS
+// ============================================================
+function registrarEntrada() {
+  const id = parseInt(document.getElementById('entradaProducto').value);
+  const cant = parseInt(document.getElementById('entradaCantidad').value);
+  const precio = parseFloat(document.getElementById('entradaPrecio').value);
+  const venta = parseFloat(document.getElementById('entradaVenta').value);
+
+  if(!cant || cant < 1) { toast('Ingresa una cantidad valida', 'error'); return; }
+  if(!precio || precio < 0) { toast('Ingresa precio de compra', 'error'); return; }
+
+  const p = productos.find(x => x.id === id);
+  p.stock += cant;
+  if(venta && venta > 0) p.venta = venta;
+  if(precio && precio > 0) p.compra = precio;
+
+  entradas.unshift({
+    id: Date.now(),
+    productoId: id,
+    cantidad: cant,
+    precioCompra: precio,
+    precioVenta: venta || p.venta,
+    fecha: new Date().toLocaleString('es-MX'),
+    total: cant * precio
+  });
+
+  document.getElementById('entradaCantidad').value = 1;
+  document.getElementById('entradaPrecio').value = '';
+  document.getElementById('entradaVenta').value = '';
+
+  saveData();
+  renderInventario(); renderEntradas(); updateStats(); updateSelects();
+  toast('Entrada registrada: ' + cant + 'x ' + p.nombre);
+}
+
+function renderEntradas() {
+  const tbody = document.getElementById('tbodyEntradas');
+  if(entradas.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="6" class="empty"><div class="empty-icon">📭</div>Sin entradas registradas</td></tr>';
+    return;
+  }
+  tbody.innerHTML = entradas.map(e => {
+    const prod = productos.find(p => p.id === e.productoId);
+    return '<tr><td>' + e.fecha + '</td><td><strong>' + (prod ? prod.nombre : '?') + '</strong></td><td>+' + e.cantidad + '</td><td>$' + e.precioCompra + '</td><td>$' + e.precioVenta + '</td><td class="profit-negative">$' + e.total + '</td></tr>';
+  }).join('');
+}
+
+// ============================================================
+// SALIDAS
+// ============================================================
+function registrarSalida() {
+  const id = parseInt(document.getElementById('salidaProducto').value);
+  const cant = parseInt(document.getElementById('salidaCantidad').value);
+  const cliente = document.getElementById('salidaCliente').value.trim();
+  const status = document.getElementById('salidaStatus').value;
+
+  if(!cant || cant < 1) { toast('Ingresa una cantidad valida', 'error'); return; }
+  if(!cliente) { toast('Ingresa el nombre del cliente', 'error'); return; }
+
+  const p = productos.find(x => x.id === id);
+  if(cant > p.stock) { toast('No hay suficiente stock. Disponible: ' + p.stock, 'error'); return; }
+
+  p.stock -= cant;
+
+  ventas.unshift({
+    id: Date.now(),
+    productoId: id,
+    cantidad: cant,
+    cliente: cliente,
+    precioUnitario: p.venta,
+    status: status,
+    fecha: new Date().toLocaleString('es-MX')
+  });
+
+  document.getElementById('salidaCantidad').value = 1;
+  document.getElementById('salidaCliente').value = '';
+
+  saveData();
+  renderInventario(); renderSalidas(); updateStats(); updateSelects();
+  toast('Venta registrada: ' + cant + 'x ' + p.nombre + ' → ' + cliente);
+}
+
+function renderSalidas() {
+  const tbody = document.getElementById('tbodySalidas');
+  if(ventas.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="8" class="empty"><div class="empty-icon">📭</div>Sin ventas registradas</td></tr>';
+    return;
+  }
+  tbody.innerHTML = ventas.map(v => {
+    const prod = productos.find(p => p.id === v.productoId);
+    const sc = v.status === 'pdte.' ? 'badge-pendiente' : v.status === 'mixto' ? 'badge-mixto' : 'badge-pagado';
+    const total = v.cantidad * v.precioUnitario;
+    return '<tr><td>' + v.fecha + '</td><td><strong>' + (prod ? prod.nombre : '?') + '</strong></td><td>-' + v.cantidad + '</td><td>' + v.cliente + '</td><td>$' + v.precioUnitario + '</td><td class="profit-positive">$' + total + '</td><td><span class="badge ' + sc + '">' + v.status + '</span></td><td class="actions" style="text-align:center;"><button class="btn btn-sm btn-primary" onclick="editarVenta(' + v.id + ')" title="Editar">✏️</button><button class="btn btn-sm btn-danger" onclick="eliminarVenta(' + v.id + ')" title="Eliminar">🗑️</button></td></tr>';
+  }).join('');
+}
+
+function editarVenta(id) {
+  const v = ventas.find(x => x.id === id);
+  if(!v) return;
+  editandoVentaId = id;
+  const prod = productos.find(p => p.id === v.productoId);
+  document.getElementById('editVentaProducto').value = prod ? prod.nombre : '?';
+  document.getElementById('editVentaCliente').value = v.cliente;
+  document.getElementById('editVentaStatus').value = v.status;
+  openModal('editarVenta');
+}
+
+function guardarEdicionVenta() {
+  const v = ventas.find(x => x.id === editandoVentaId);
+  if(!v) return;
+  v.cliente = document.getElementById('editVentaCliente').value.trim();
+  v.status = document.getElementById('editVentaStatus').value;
+  closeModal('editarVenta');
+  saveData();
+  renderSalidas(); renderClientes(); updateStats();
+  toast('Venta actualizada ✅');
+}
+
+function eliminarVenta(id) {
+  if(!confirm('¿Eliminar esta venta? Se devolvera el stock al producto.')) return;
+  const v = ventas.find(x => x.id === id);
+  if(v) {
+    const p = productos.find(x => x.id === v.productoId);
+    if(p) p.stock += v.cantidad;
+  }
+  ventas = ventas.filter(v => v.id !== id);
+  saveData();
+  renderInventario(); renderSalidas(); renderClientes(); updateStats(); updateSelects();
+  toast('Venta eliminada, stock restaurado 🗑️');
+}
+
+// ============================================================
+// CLIENTES
+// ============================================================
+function renderClientes() {
+  const tbody = document.getElementById('tbodyClientes');
+  const clientes = {};
+
+  ventas.forEach(v => {
+    const nombre = v.cliente.trim();
+    if(!nombre) return;
+    if(!clientes[nombre]) clientes[nombre] = { compras: 0, total: 0, pagado: 0, debe: 0 };
+    const totalVenta = v.cantidad * v.precioUnitario;
+    clientes[nombre].compras += v.cantidad;
+    clientes[nombre].total += totalVenta;
+    const st = v.status.toLowerCase();
+    if(st.includes('pagado')) {
+      clientes[nombre].pagado += totalVenta;
+    } else if(st.includes('mixto')) {
+      clientes[nombre].pagado += totalVenta * 0.5;
+      clientes[nombre].debe += totalVenta * 0.5;
+    } else {
+      clientes[nombre].debe += totalVenta;
+    }
+  });
+
+  if(Object.keys(clientes).length === 0) {
+    tbody.innerHTML = '<tr><td colspan="7" class="empty"><div class="empty-icon">📭</div>Sin clientes registrados</td></tr>';
+    return;
+  }
+
+  tbody.innerHTML = Object.entries(clientes).map(([nombre, c]) => {
+    const stClass = c.debe === 0 ? 'badge-pagado' : (c.debe > 0 && c.pagado > 0) ? 'badge-mixto' : 'badge-pendiente';
+    const stText = c.debe === 0 ? 'Pagado' : (c.debe > 0 && c.pagado > 0) ? 'Mixto' : 'Pendiente';
+    return '<tr><td><strong>' + nombre + '</strong></td><td>' + c.compras + '</td><td>$' + c.total.toLocaleString('es-MX') + '</td><td class="profit-positive">$' + c.pagado.toLocaleString('es-MX') + '</td><td class="profit-negative">$' + c.debe.toLocaleString('es-MX') + '</td><td><span class="badge ' + stClass + '">' + stText + '</span></td><td style="text-align:center;"><button class="btn btn-sm btn-success" onclick="marcarPagado(\'' + nombre + '\')">💰 Pagar Todo</button></td></tr>';
+  }).join('');
+}
+
+function marcarPagado(nombre) {
+  if(!confirm('¿Marcar TODAS las ventas de "' + nombre + '" como pagadas?')) return;
+  ventas.forEach(v => {
+    if(v.cliente.trim() === nombre) v.status = 'pagado';
+  });
+  saveData();
+  renderSalidas(); renderClientes(); updateStats();
+  toast(nombre + ' marcado como pagado ✅');
+}
+
+// ============================================================
+// MODALES
+// ============================================================
+function openModal(tipo) {
+  document.getElementById('modal' + tipo.charAt(0).toUpperCase() + tipo.slice(1)).classList.add('active');
+}
+function closeModal(tipo) {
+  document.getElementById('modal' + tipo.charAt(0).toUpperCase() + tipo.slice(1)).classList.remove('active');
+  editandoVentaId = null;
+}
+
+function guardarProducto() {
+  const nombre = document.getElementById('newNombre').value.trim();
+  const stock = parseInt(document.getElementById('newUnidades').value) || 0;
+  const compra = parseFloat(document.getElementById('newCompra').value) || 0;
+  const venta = parseFloat(document.getElementById('newVenta').value) || 0;
+  if(!nombre) { toast('Ingresa el nombre del producto', 'error'); return; }
+
+  productos.push({ id: Date.now(), nombre, stock, compra, venta });
+
+  document.getElementById('newNombre').value = '';
+  document.getElementById('newUnidades').value = '0';
+  document.getElementById('newCompra').value = '';
+  document.getElementById('newVenta').value = '';
+
+  closeModal('producto');
+  saveData();
+  renderInventario(); updateStats(); updateSelects();
+  toast('Producto agregado ✅');
+}
+
+function editarProductoPrecios(id) {
+  const p = productos.find(x => x.id === id);
+  const nuevoCompra = prompt('Precio de compra actual: $' + p.compra + '\nNuevo precio de compra:', p.compra);
+  if(nuevoCompra === null) return;
+  const nuevoVenta = prompt('Precio de venta actual: $' + p.venta + '\nNuevo precio de venta:', p.venta);
+  if(nuevoVenta === null) return;
+  p.compra = parseFloat(nuevoCompra) || p.compra;
+  p.venta = parseFloat(nuevoVenta) || p.venta;
+  saveData();
+  renderInventario(); updateStats();
+  toast('Precios actualizados ✅');
+}
+
+function eliminarProducto(id) {
+  if(!confirm('¿Eliminar este producto? Tambien se borraran sus entradas y ventas del historial.')) return;
+  productos = productos.filter(p => p.id !== id);
+  entradas = entradas.filter(e => e.productoId !== id);
+  ventas = ventas.filter(v => v.productoId !== id);
+  saveData();
+  renderInventario(); renderEntradas(); renderSalidas(); renderClientes(); updateStats(); updateSelects();
+  toast('Producto eliminado 🗑️');
+}
+
+// ============================================================
+// EXPORTAR / IMPORTAR
+// ============================================================
+function exportarJSON() {
+  const data = JSON.stringify({ productos, entradas, ventas }, null, 2);
+  const blob = new Blob([data], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'respaldo_inventario_' + new Date().toISOString().slice(0,10) + '.json';
+  a.click();
+  URL.revokeObjectURL(url);
+  toast('Respaldo descargado 💾');
+}
+
+function importarJSON(input) {
+  const file = input.files[0];
+  if(!file) return;
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    try {
+      const data = JSON.parse(e.target.result);
+      if(data.productos) productos = data.productos;
+      if(data.entradas) entradas = data.entradas;
+      if(data.ventas) ventas = data.ventas;
+      saveData();
+      renderInventario(); renderEntradas(); renderSalidas(); renderClientes(); updateStats(); updateSelects();
+      toast('Datos cargados correctamente 📂');
+    } catch(err) {
+      toast('Error al cargar el archivo', 'error');
+    }
+  };
+  reader.readAsText(file);
+  input.value = '';
+}
+
+function exportarCSV() {
+  let csv = 'Producto,Stock,Compra,Venta,Entradas,Salidas,Ganancia\n';
+  productos.forEach(p => {
+    const totalEntradas = entradas.filter(e => e.productoId === p.id).reduce((a,e) => a + e.cantidad, 0);
+    const totalSalidas = ventas.filter(v => v.productoId === p.id).reduce((a,v) => a + v.cantidad, 0);
+    const ganancia = ventas.filter(v => v.productoId === p.id).reduce((a,v) => a + v.cantidad * (v.precioUnitario - p.compra), 0);
+    csv += '"' + p.nombre + '",' + p.stock + ',' + p.compra + ',' + p.venta + ',' + totalEntradas + ',' + totalSalidas + ',' + ganancia + '\n';
+  });
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'inventario_' + new Date().toISOString().slice(0,10) + '.csv';
+  a.click();
+  URL.revokeObjectURL(url);
+  toast('CSV descargado 📥');
+}
+
+function resetearDatos() {
+  if(!confirm('⚠️ ¿Borrar TODOS los datos y volver al estado inicial?')) return;
+  localStorage.removeItem(STORAGE_KEY);
+  const fresh = loadData();
+  productos = fresh.productos;
+  entradas = fresh.entradas;
+  ventas = fresh.ventas;
+  renderInventario(); renderEntradas(); renderSalidas(); renderClientes(); updateStats(); updateSelects();
+  toast('Datos reiniciados 🔄');
+}
+
+// Cerrar modal al hacer click fuera
+document.querySelectorAll('.modal-overlay').forEach(m => {
+  m.addEventListener('click', e => { if(e.target === m) m.classList.remove('active'); });
+});
+
+// ============================================================
+// INICIALIZAR
+// ============================================================
+function init() {
+  renderInventario();
+  renderEntradas();
+  renderSalidas();
+  renderClientes();
+  updateStats();
+  updateSelects();
+}
+init();
+</script>
+
+</body>
+</html>
